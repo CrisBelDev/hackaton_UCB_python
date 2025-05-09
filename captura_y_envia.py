@@ -1,17 +1,23 @@
 import cv2
 import time
 import requests
+from collections import Counter
 
-# URL de tu API
-API_URL = "http://127.0.0.1:8000/analizar"
+# Endpoints
+API_ANALIZAR = "http://127.0.0.1:8000/analizar"
+API_GUARDAR = "http://127.0.0.1:8000/guardar_emocion"
 
 # Inicializar la cámara (0 es la cámara por defecto)
 cam = cv2.VideoCapture(0)
 
-# Verifica si la cámara se abrió correctamente
+# Verificar que la cámara se abrió correctamente
 if not cam.isOpened():
     print("❌ No se pudo acceder a la cámara")
     exit()
+
+# Variables para controlar tiempo y emociones
+emociones = []
+start_time = time.time()
 
 try:
     while True:
@@ -25,14 +31,37 @@ try:
         img_path = "temp.jpg"
         cv2.imwrite(img_path, frame)
 
-        # Enviar a la API
+        # Enviar imagen a la API para análisis (sin guardar en Mongo)
         with open(img_path, "rb") as f:
             files = {"file": ("temp.jpg", f, "image/jpeg")}
             try:
-                response = requests.post(API_URL, files=files)
-                print("✅ Respuesta de la API:", response.json())
+                response = requests.post(API_ANALIZAR, files=files)
+                data = response.json()
+                emocion = data.get("emocion")
+                if emocion:
+                    emociones.append(emocion)
+                    print(f"🧠 Emoción detectada: {emocion}")
+                else:
+                    print("⚠️ No se detectó emoción válida")
             except Exception as e:
                 print("❌ Error al conectar con la API:", e)
+
+        # Si han pasado 60 segundos, guardar la emoción dominante
+        if time.time() - start_time >= 60:
+            if emociones:
+                dominante = Counter(emociones).most_common(1)[0][0]
+                print(f"💾 Emoción dominante en 60s: {dominante}")
+
+                # Enviar a la API de guardado
+                try:
+                    res = requests.post(API_GUARDAR, json={"emocion": dominante})
+                    print("📥 Emoción guardada:", res.json())
+                except Exception as e:
+                    print("❌ Error al guardar en BD:", e)
+
+            # Reiniciar acumulador y tiempo
+            emociones = []
+            start_time = time.time()
 
         # Esperar 5 segundos antes de la siguiente captura
         time.sleep(5)
