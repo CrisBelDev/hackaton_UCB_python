@@ -1,3 +1,4 @@
+# captura_y_envia.py
 import cv2
 import time
 import requests

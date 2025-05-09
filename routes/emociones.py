@@ -1,3 +1,4 @@
+# routes/emociones.py
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel

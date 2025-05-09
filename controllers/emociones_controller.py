@@ -1,3 +1,4 @@
+# controller/emociones_controller.py
 from fastapi.responses import JSONResponse
 from fastapi import UploadFile, File
 from services.emocion_service import analizar_emocion, obtener_emociones
