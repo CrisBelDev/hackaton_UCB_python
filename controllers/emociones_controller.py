@@ -20,6 +20,7 @@ async def listar_emociones():
         return await obtener_emociones()
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+<<<<<<< HEAD
 
 # Procesar datos de ritmo cardíaco
 async def procesar_ritmo_cardiaco(ritmo_cardiaco: list[int]):
@@ -27,3 +28,5 @@ async def procesar_ritmo_cardiaco(ritmo_cardiaco: list[int]):
         return await procesar_ritmo(ritmo_cardiaco)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+=======
+>>>>>>> parent of b09e32d (esp32 api integration)
