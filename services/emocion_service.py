@@ -8,7 +8,7 @@ from database.mongo import emotion_col
 from datetime import datetime
 
 from openai import OpenAI  # Asegúrate de instalar el SDK: `pip install openai`
-from database.mongo import pulse_col
+
 
 # Configuración del cliente de DeepSeek
 client = OpenAI(api_key="sk-1e216daa06464bd584d0f3367144ef2b", base_url="https://api.deepseek.com")
