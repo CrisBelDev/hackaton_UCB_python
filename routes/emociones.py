@@ -4,13 +4,10 @@ from fastapi import Request
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-<<<<<<< HEAD
 from controllers.emociones_controller import procesar_emocion, listar_emociones, procesar_datosmart
 from database.mongo import emotion_col
-=======
 from controllers.emociones_controller import procesar_emocion, listar_emociones, procesar_ritmo_cardiaco	
 from database.mongo import emotion_col, pulse_col  # Asegúrate de tener una colección para los datos de pulso
->>>>>>> b09e32d21b10781e50f777d3c3d176f8920849f0
 from datetime import datetime
 
 emociones_router = APIRouter()
