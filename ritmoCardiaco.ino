@@ -48,7 +48,7 @@ void loop() {
 
     if (request == "GET_PULSE") { 
         Serial.println("Solicitud GET_PULSE recibida");
-        String pulseData = String(pulse * 2); // Crear la cadena
+        String pulseData = String(pulse * 12); // Crear la cadena
         pulseData.trim(); // Aplicar trim() a la cadena
         SerialBT.println(pulseData); // Enviar la cadena por Bluetooth
     }
