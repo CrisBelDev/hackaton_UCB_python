@@ -1,1 +1,4 @@
 */__pycache__/
+venv/
+venv/Lib/site-packages/__pycache__/_sounddevice.cpython-39.pyc
+/__pycache__
