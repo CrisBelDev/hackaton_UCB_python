@@ -1,13 +1,34 @@
-# captura_y_envia.py
 import cv2
 import time
 import requests
 import socket  # Para comunicación Bluetooth
 from collections import Counter
+import serial  # Biblioteca para comunicación serial
 
+# Configuración del puerto serial
+SERIAL_PORT = "COM6"  # Cambia esto al puerto donde está conectado el Wio Terminal
+BAUD_RATE = 9600
+
+
+IP_BACKEND_LOCAL_MACHINE = "127.0.0.1"
+IP_BACKEND_LOCAL_REMOTE_MACHINE = "192.168.75.93"
+IP_BACKEND = ""
+
+validacion = False
+
+if (validacion):
+    IP_BACKEND = IP_BACKEND_LOCAL_MACHINE
+else:
+    IP_BACKEND = IP_BACKEND_LOCAL_REMOTE_MACHINE
+
+
+
+
+#API_ANALIZAR = f"http://{IP_BACKEND}:8000/api/analizar"
 # Endpoints
-API_ANALIZAR = "http://127.0.0.1:8000/analizar"
-API_GUARDAR = "http://127.0.0.1:8000/guardar_emocion"
+API_ANALIZAR = f"http://{IP_BACKEND}:8000/analizar"
+API_GUARDAR = f"http://{IP_BACKEND}:8000/guardar_emocion"
+API_PROCESAR_BMP = f"http://{IP_BACKEND}:8000/datosmart"
 
 # Configuración de Bluetooth
 ESP32_MAC = "A0:B7:65:28:C4:DE"  # Cambia esto por la dirección MAC de tu ESP32
@@ -22,6 +43,15 @@ except Exception as e:
     print(f"❌ No se pudo conectar al Bluetooth: {e}")
     exit()
 
+
+try:
+    # Inicializar conexión serial
+    wio_serial = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+    print("✅ Conexión serial con Wio Terminal establecida")
+except Exception as e:
+    print(f"❌ No se pudo conectar al Wio Terminal: {e}")
+    exit()
+
 # Inicializar la cámara (0 es la cámara por defecto)
 cam = cv2.VideoCapture(0)
 
@@ -32,6 +62,8 @@ if not cam.isOpened():
 
 # Variables para controlar tiempo y emociones
 emociones = []
+ritmoCardiaco = []
+emocionRitmoCardiaco = ""
 start_time = time.time()
 
 try:
@@ -68,26 +100,56 @@ try:
             pulse_data = bt_socket.recv(1024).decode().strip()  # Leer respuesta
             if pulse_data:
                 print(f"💓 Pulso recibido desde ESP32: {pulse_data}")
+                ritmoCardiaco.append(pulse_data)
             else:
                 print("⚠️ No se recibieron datos del ESP32")
         except Exception as e:
             print(f"❌ Error en comunicación Bluetooth: {e}")
 
+                        # Enviar datos al Wio Terminal
+        try:
+            if pulse_data and emocion:
+                # Formatear los datos como "ritmoCardiaco,emocion\n"
+                data_to_send = f"{pulse_data},{emocion}\n"
+                wio_serial.write(data_to_send.encode())  # Enviar datos por serial
+                print(f"📤 Datos enviados al Wio Terminal: {data_to_send}")
+        except Exception as e:
+            print(f"❌ Error al enviar datos al Wio Terminal: {e}")
+
+
         # Si han pasado 60 segundos, guardar la emoción dominante
         if time.time() - start_time >= 60:
+            if ritmoCardiaco:
+                # Enviar datos de pulso a la API
+                try:
+                    emocionRitmoCardiaco = requests.post(API_PROCESAR_BMP, json={"ritmoCardiaco": ritmoCardiaco})
+                    print("📥 Datos de pulso guardados")
+                except Exception as e:
+                    print("❌ Error al guardar datos de pulso:", e)
+
             if emociones:
                 dominante = Counter(emociones).most_common(1)[0][0]
-                print(f"💾 Emoción dominante en 60s: {dominante}")
+                data = emocionRitmoCardiaco.json()
+                emocionCardio = data.get("emocion")
+                print(f"💾 Emoción dominante biometrica en 60s: {dominante}")
+                print(f"💾 Emoción dominante fisiologica en 60s: {dominante}")
 
                 # Enviar a la API de guardado
                 try:
-                    res = requests.post(API_GUARDAR, json={"emocion": dominante})
+                    res = requests.post(API_GUARDAR, json={"emocion": dominante, "emocionCardio": emocionCardio})
                     print("📥 Emoción guardada:", res.json())
                 except Exception as e:
                     print("❌ Error al guardar en BD:", e)
 
+
+
+
+
+
+
             # Reiniciar acumulador y tiempo
             emociones = []
+            ritmoCardiaco = []
             start_time = time.time()
 
         # Esperar 5 segundos antes de la siguiente captura
@@ -100,3 +162,4 @@ finally:
     cam.release()
     cv2.destroyAllWindows()
     bt_socket.close()
+    wio_serial.close()  # Cerrar conexión serial

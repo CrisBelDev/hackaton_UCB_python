@@ -1,0 +1,23 @@
+{
+    "files.associations": {
+        "*.sqlbook": "sql",
+        "*.ndjson": "jsonl",
+        "*.dbclient-js": "javascript",
+        "*.rmd": "markdown",
+        "string.h": "c",
+        "freertos.h": "c",
+        "stdio.h": "c",
+        "task.h": "c",
+        "gpio.h": "c",
+        "sdkconfig.h": "c",
+        "timers.h": "c",
+        "app_network.h": "c",
+        "app_insights.h": "c",
+        "app_priv.h": "c",
+        "esp_rmaker_core.h": "c",
+        "app_reset.h": "c",
+        "iosfwd": "c",
+        "xlocbuf": "c",
+        "*.inc": "cpp"
+    }
+}
