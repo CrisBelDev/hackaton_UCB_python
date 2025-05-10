@@ -1,8 +1,10 @@
 # routes/emociones.py
+from fastapi import Request
+
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from controllers.emociones_controller import procesar_emocion, listar_emociones
+from controllers.emociones_controller import procesar_emocion, listar_emociones, procesar_datosmart
 from database.mongo import emotion_col
 from datetime import datetime
 
@@ -17,6 +19,12 @@ async def analizar(file: UploadFile = File(...)):
 @emociones_router.get("/emociones")
 async def obtener_emociones():
     return await listar_emociones()
+
+
+# Endpoint para obtener los datos del reloj
+@emociones_router.post("/datosmart")
+async def registrar_datosmart(request: Request):
+    return await procesar_datosmart(request)
 
 # Modelo de entrada para guardar emoción
 class EmocionEntrada(BaseModel):
