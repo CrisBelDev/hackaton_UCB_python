@@ -3,6 +3,11 @@ import time
 import requests
 import socket  # Para comunicación Bluetooth
 from collections import Counter
+import serial  # Biblioteca para comunicación serial
+
+# Configuración del puerto serial
+SERIAL_PORT = "COM6"  # Cambia esto al puerto donde está conectado el Wio Terminal
+BAUD_RATE = 9600
 
 
 IP_BACKEND_LOCAL_MACHINE = "127.0.0.1"
@@ -36,6 +41,15 @@ try:
     print("✅ Conexión Bluetooth establecida")
 except Exception as e:
     print(f"❌ No se pudo conectar al Bluetooth: {e}")
+    exit()
+
+
+try:
+    # Inicializar conexión serial
+    wio_serial = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+    print("✅ Conexión serial con Wio Terminal establecida")
+except Exception as e:
+    print(f"❌ No se pudo conectar al Wio Terminal: {e}")
     exit()
 
 # Inicializar la cámara (0 es la cámara por defecto)
@@ -92,13 +106,24 @@ try:
         except Exception as e:
             print(f"❌ Error en comunicación Bluetooth: {e}")
 
+                        # Enviar datos al Wio Terminal
+        try:
+            if pulse_data and emocion:
+                # Formatear los datos como "ritmoCardiaco,emocion\n"
+                data_to_send = f"{pulse_data},{emocion}\n"
+                wio_serial.write(data_to_send.encode())  # Enviar datos por serial
+                print(f"📤 Datos enviados al Wio Terminal: {data_to_send}")
+        except Exception as e:
+            print(f"❌ Error al enviar datos al Wio Terminal: {e}")
+
+
         # Si han pasado 60 segundos, guardar la emoción dominante
         if time.time() - start_time >= 60:
             if ritmoCardiaco:
                 # Enviar datos de pulso a la API
                 try:
                     emocionRitmoCardiaco = requests.post(API_PROCESAR_BMP, json={"ritmoCardiaco": ritmoCardiaco})
-                    print("📥 Datos de pulso guardados:", res.json())
+                    print("📥 Datos de pulso guardados")
                 except Exception as e:
                     print("❌ Error al guardar datos de pulso:", e)
 
@@ -107,7 +132,7 @@ try:
                 data = emocionRitmoCardiaco.json()
                 emocionCardio = data.get("emocion")
                 print(f"💾 Emoción dominante biometrica en 60s: {dominante}")
-                print(f"💾 Emoción dominante fisiologica en 60s: {emocionCardio}")
+                print(f"💾 Emoción dominante fisiologica en 60s: {dominante}")
 
                 # Enviar a la API de guardado
                 try:
@@ -115,6 +140,11 @@ try:
                     print("📥 Emoción guardada:", res.json())
                 except Exception as e:
                     print("❌ Error al guardar en BD:", e)
+
+
+
+
+
 
 
             # Reiniciar acumulador y tiempo
@@ -132,3 +162,4 @@ finally:
     cam.release()
     cv2.destroyAllWindows()
     bt_socket.close()
+    wio_serial.close()  # Cerrar conexión serial
