@@ -22,5 +22,7 @@ async def listar_emociones():
 async def procesar_ritmo_cardiaco(ritmo_cardiaco: list[int]):
     try:
         return await procesar_ritmo(ritmo_cardiaco)
+    
+    
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
